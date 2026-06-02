@@ -555,7 +555,14 @@ body{background:var(--bg);color:var(--t);font-family:'Hind Siliguri',sans-serif;
 .dmod-hadith-src::before{content:'';display:inline-block;width:16px;height:1px;background:var(--green);}
 
 </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+  (function(){
+    var s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+    s.onerror=function(){ window._supabaseLoadFailed=true; };
+    document.head.appendChild(s);
+  })();
+  </script>
 </head>
 <body>
 <!-- SYNC & GUIDE -->
@@ -2851,15 +2858,17 @@ function toggleAllNotesView(){
   document.getElementById('study-all-notes-content').innerHTML = html;
 }
 
-window.addEventListener('load',()=>{
+function initScreen(){
   if(checkSession()){
     document.getElementById('login-screen').style.display='none';
     document.getElementById('hub-screen').style.display='flex';
   } else {
-    // Focus username field
-    setTimeout(()=>document.getElementById('login-user').focus(),300);
+    document.getElementById('login-screen').style.display='flex';
+    setTimeout(()=>{ var u=document.getElementById('login-user'); if(u) u.focus(); },300);
   }
-});
+}
+document.addEventListener('DOMContentLoaded', initScreen);
+window.addEventListener('load', initScreen);
 </script>
 
 </div><!-- end main-content -->
@@ -2874,7 +2883,7 @@ window.addEventListener('load',()=>{
   </div>
 
   <!-- Two-panel layout -->
-  <div style="display:grid;grid-template-columns:280px 1fr;min-height:calc(100vh - 53px);max-width:1100px;margin:0 auto;">
+  <div style="display:grid;grid-template-columns:280px 1fr;min-height:calc(100vh - 53px);width:100%;">
 
     <!-- LEFT SIDEBAR: entry list -->
     <div style="border-right:1px solid #1b1b2e;padding:16px 14px;overflow-y:auto;max-height:calc(100vh - 53px);position:sticky;top:53px;">
