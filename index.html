@@ -59,7 +59,7 @@ body{background:var(--bg);color:var(--t);font-family:'Hind Siliguri',sans-serif;
 .legend{background:var(--s);border-bottom:1px solid var(--b);padding:10px 20px;display:flex;gap:14px;flex-wrap:wrap;justify-content:center;}
 .li{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t2);}
 .ld{width:10px;height:10px;border-radius:3px;}
-.tabswrap{background:var(--s);border-bottom:1px solid var(--b);position:sticky;top:0;z-index:100;}
+.tabswrap{background:var(--s);border-bottom:1px solid var(--b);position:sticky;top:38px;z-index:100;}
 .tabs{display:flex;gap:5px;padding:10px 13px;overflow-x:auto;justify-content:center;flex-wrap:wrap;}
 .tab{flex-shrink:0;padding:7px 14px;border-radius:20px;border:1px solid var(--b2);background:none;color:var(--m);font-size:11px;font-weight:600;cursor:pointer;}
 .tab.a{color:#fff;}
@@ -560,28 +560,23 @@ body{background:var(--bg);color:var(--t);font-family:'Hind Siliguri',sans-serif;
   </script>
 </head>
 <body>
-<!-- SYNC & GUIDE -->
-<!-- SYNC STATUS BAR -->
-<div class="sync-bar" id="sync-bar" style="display:none;">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="32" height="32" style="flex-shrink:0;">
-  <rect x="4" y="4" width="92" height="92" rx="20" fill="#0d0d1f" stroke="rgba(242,200,75,0.5)" stroke-width="2"/>
-  <rect x="9" y="9" width="82" height="82" rx="16" fill="none" stroke="rgba(242,200,75,0.12)" stroke-width="1"/>
-  <line x1="26" y1="75" x2="74" y2="75" stroke="#f2c84b" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
-  <text x="50" y="70" font-family="Georgia,'Times New Roman',serif" font-size="58" font-weight="700" text-anchor="middle" fill="#ffffff" letter-spacing="-2">R</text>
-  <text x="50" y="87" font-family="Arial,sans-serif" font-size="9" font-weight="700" text-anchor="middle" fill="#f2c84b" letter-spacing="4">RIAZ</text>
-</svg>
-  <div class="sync-status">
-    <span class="sync-dot grey" id="sync-dot"></span>
-    <span id="sync-text">Cloud sync সেট আপ হয়নি</span>
+
+<!-- ═══════════════ GLOBAL SYNC BAR (always on top) ═══════════════ -->
+<div id="global-sync-bar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:5000;background:rgba(8,8,20,.97);border-bottom:1px solid #1b1b2e;padding:6px 16px;align-items:center;justify-content:space-between;font-size:.72rem;gap:8px;flex-wrap:wrap;backdrop-filter:blur(12px);">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="24" height="24" style="flex-shrink:0;"><rect x="4" y="4" width="92" height="92" rx="20" fill="#0d0d1f" stroke="rgba(242,200,75,0.5)" stroke-width="2"/><text x="50" y="70" font-family="Georgia,serif" font-size="58" font-weight="700" text-anchor="middle" fill="#ffffff" letter-spacing="-2">R</text><text x="50" y="87" font-family="Arial,sans-serif" font-size="9" font-weight="700" text-anchor="middle" fill="#f2c84b" letter-spacing="4">RIAZ</text></svg>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span id="gsync-dot" style="width:7px;height:7px;border-radius:50%;flex-shrink:0;display:inline-block;background:#555;transition:background .3s;"></span>
+      <span id="gsync-text" style="color:#9898b0;">Cloud sync সেট আপ হয়নি</span>
+    </div>
   </div>
-  <div class="sync-btns">
-    <button class="sync-mini-btn" id="sync-btn" onclick="manualSync()">
-      <span id="sync-btn-icon">↻</span>
-      <span id="sync-btn-text"> Sync</span>
-    </button>
-    <button class="sync-mini-btn" onclick="openGuide()">☁️ Setup</button>
+  <div style="display:flex;gap:6px;align-items:center;">
+    <button id="gsync-btn" onclick="hubManualSync()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:4px 11px;color:#9898b0;font-size:.7rem;cursor:pointer;font-family:inherit;transition:all .2s;white-space:nowrap;"><span id="gsync-icon">↻</span> <span id="gsync-btxt">Sync</span></button>
+    <button onclick="openGuide()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:4px 11px;color:#9898b0;font-size:.7rem;cursor:pointer;font-family:inherit;">☁️ Setup</button>
   </div>
 </div>
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SYNC & GUIDE -->
 
 <!-- SETUP GUIDE MODAL -->
 <div class="guide-overlay" id="guide-overlay">
@@ -691,22 +686,8 @@ CREATE POLICY "open" ON d90_state FOR ALL USING (true) WITH CHECK (true);</div>
 <!-- HUB SCREEN -->
 <div id="hub-screen" style="display:none;min-height:100vh;background:radial-gradient(ellipse at 50% 0%,#1a0c02 0%,#05050f 60%);flex-direction:column;">
 
-  <!-- SYNC BAR - hub level, always visible after login -->
-  <div id="hub-sync-bar" style="background:rgba(10,10,24,.92);border-bottom:1px solid #1b1b2e;padding:7px 20px;display:flex;align-items:center;justify-content:space-between;font-size:.74rem;gap:8px;flex-wrap:wrap;">
-    <div style="display:flex;align-items:center;gap:8px;">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="28" height="28" style="flex-shrink:0;"><rect x="4" y="4" width="92" height="92" rx="20" fill="#0d0d1f" stroke="rgba(242,200,75,0.5)" stroke-width="2"/><text x="50" y="70" font-family="Georgia,serif" font-size="58" font-weight="700" text-anchor="middle" fill="#ffffff" letter-spacing="-2">R</text><text x="50" y="87" font-family="Arial,sans-serif" font-size="9" font-weight="700" text-anchor="middle" fill="#f2c84b" letter-spacing="4">RIAZ</text></svg>
-      <div style="display:flex;align-items:center;color:#9898b0;">
-        <span id="hub-sync-dot" style="width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block;margin-right:6px;background:#555;"></span>
-        <span id="hub-sync-text">Cloud sync সেট আপ হয়নি</span>
-      </div>
-    </div>
-    <div style="display:flex;gap:6px;">
-      <button id="hub-sync-btn" onclick="hubManualSync()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:5px 12px;color:#9898b0;font-size:.72rem;cursor:pointer;font-family:inherit;transition:all .2s;"><span id="hub-sync-icon">↻</span> <span id="hub-sync-btxt">Sync</span></button>
-      <button onclick="openGuide()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:5px 12px;color:#9898b0;font-size:.72rem;cursor:pointer;font-family:inherit;">☁️ Setup</button>
-    </div>
-  </div>
 
-  <div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:28px 20px;">
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:66px 20px 28px;">
   <div style="text-align:center;margin-bottom:40px;">
     <div style="font-size:1.8rem;margin-bottom:8px;">بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ</div>
     <h1 style="font-family:'Playfair Display',serif;font-size:clamp(1.5rem,4vw,2.4rem);font-weight:900;background:linear-gradient(140deg,#fff 30%,#e85d2a 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px;">Riaz-এর Dashboard</h1>
@@ -750,7 +731,7 @@ CREATE POLICY "open" ON d90_state FOR ALL USING (true) WITH CHECK (true);</div>
 </div>
 
 <!-- STUDY TRACKER SECTION -->
-<div id="study-section" style="display:none;min-height:100vh;background:var(--bg);">
+<div id="study-section" style="display:none;min-height:100vh;background:var(--bg);padding-top:38px;">
   <div style="background:rgba(10,10,24,.9);border-bottom:1px solid #1b1b2e;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;">
     <button onclick="backToHub()" style="background:rgba(43,143,255,.1);border:1px solid rgba(43,143,255,.3);color:#2b8fff;border-radius:20px;padding:7px 16px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;">← Hub-এ ফিরুন</button>
     <div style="display:flex;align-items:center;gap:8px;">
@@ -817,7 +798,7 @@ CREATE POLICY "open" ON d90_state FOR ALL USING (true) WITH CHECK (true);</div>
   </div>
 
 </div>
-<div id="main-content" style="display:none">
+<div id="main-content" style="display:none;padding-top:38px">
 <div class="sw" id="sw">⚠️ আজকের দিনের তথ্য লোড হয়নি। স্টার্ট ডেট সেট করুন।</div>
 <div class="hero">
   <div class="hero-inner" style="position:relative;">
@@ -2253,13 +2234,13 @@ async function initSupaIfConfigured(){
 
 // ==================== HUB-LEVEL SYNC (all 3 sections) ====================
 
-// Hub sync status updater
+// Global sync status updater (targets the always-visible fixed bar)
 function setHubSyncStatus(status, text){
-  const dot = document.getElementById('hub-sync-dot');
-  const txt = document.getElementById('hub-sync-text');
-  const btn = document.getElementById('hub-sync-btn');
-  const icon = document.getElementById('hub-sync-icon');
-  const btxt = document.getElementById('hub-sync-btxt');
+  const dot = document.getElementById('gsync-dot');
+  const txt = document.getElementById('gsync-text');
+  const btn = document.getElementById('gsync-btn');
+  const icon = document.getElementById('gsync-icon');
+  const btxt = document.getElementById('gsync-btxt');
   if(!dot||!txt) return;
   const colors = {green:'#4caf7d', yellow:'#f0a500', red:'#f87171', grey:'#555'};
   dot.style.background = colors[status] || '#555';
@@ -2428,6 +2409,7 @@ function doLogin(){
   if(u===LOGIN_USER && p===LOGIN_PASS){
     err.textContent='';
     localStorage.setItem(SESSION_KEY,'active');
+    document.getElementById('global-sync-bar').style.display='flex';
     setTimeout(initSupaIfConfigured, 800);
     const screen=document.getElementById('login-screen');
     screen.classList.add('login-screen-exit');
@@ -2447,6 +2429,7 @@ function doLogin(){
 function doLogout(){
   if(!confirm('লগআউট করবে?')) return;
   localStorage.removeItem(SESSION_KEY);
+  document.getElementById('global-sync-bar').style.display='none';
   location.reload();
 }
 
@@ -3069,9 +3052,9 @@ window.addEventListener('load',()=>{
 </div><!-- end main-content -->
 
 <!-- JOURNAL SECTION -->
-<div id="journal-section" style="display:none;min-height:100vh;background:var(--bg);">
+<div id="journal-section" style="display:none;min-height:100vh;background:var(--bg);padding-top:38px;">
   <!-- Top bar -->
-  <div style="background:rgba(10,10,24,.9);border-bottom:1px solid #1b1b2e;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;">
+  <div style="background:rgba(10,10,24,.9);border-bottom:1px solid #1b1b2e;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:38px;z-index:100;">
     <button onclick="backToHubFromJournal()" style="background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);color:#8b5cf6;border-radius:20px;padding:7px 16px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit;">← Hub-এ ফিরুন</button>
     <span style="font-size:.9rem;font-weight:700;color:#eae8e2;">📓 ডেইলি জার্নাল</span>
     <button onclick="doLogout()" style="background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.22);color:#f87171;border-radius:20px;padding:7px 14px;font-size:.75rem;font-weight:700;cursor:pointer;font-family:inherit;">⎋ লগআউট</button>
@@ -3081,7 +3064,7 @@ window.addEventListener('load',()=>{
   <div style="display:grid;grid-template-columns:280px 1fr;min-height:calc(100vh - 53px);width:100%;">
 
     <!-- LEFT SIDEBAR: entry list -->
-    <div style="border-right:1px solid #1b1b2e;padding:16px 14px;overflow-y:auto;max-height:calc(100vh - 53px);position:sticky;top:53px;">
+    <div style="border-right:1px solid #1b1b2e;padding:16px 14px;overflow-y:auto;max-height:calc(100vh - 53px);position:sticky;top:91px;">
       <button onclick="journalNewEntry()" style="width:100%;padding:11px;border-radius:12px;border:1px solid rgba(139,92,246,.4);background:rgba(139,92,246,.1);color:#8b5cf6;font-weight:700;cursor:pointer;font-size:.85rem;font-family:inherit;margin-bottom:14px;transition:all .2s;" onmouseover="this.style.background='rgba(139,92,246,.2)'" onmouseout="this.style.background='rgba(139,92,246,.1)'">+ নতুন এন্ট্রি</button>
 
       <!-- Folder Management -->
