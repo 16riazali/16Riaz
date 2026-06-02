@@ -556,12 +556,7 @@ body{background:var(--bg);color:var(--t);font-family:'Hind Siliguri',sans-serif;
 
 </style>
   <script>
-  (function(){
-    var s=document.createElement('script');
-    s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-    s.onerror=function(){ window._supabaseLoadFailed=true; };
-    document.head.appendChild(s);
-  })();
+  (function(){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';s.onerror=function(){window._supabaseLoadFailed=true;};document.head.appendChild(s);})();
   </script>
 </head>
 <body>
@@ -694,7 +689,24 @@ CREATE POLICY "open" ON d90_state FOR ALL USING (true) WITH CHECK (true);</div>
 
 
 <!-- HUB SCREEN -->
-<div id="hub-screen" style="display:none;min-height:100vh;background:radial-gradient(ellipse at 50% 0%,#1a0c02 0%,#05050f 60%);align-items:center;justify-content:center;flex-direction:column;padding:28px 20px;">
+<div id="hub-screen" style="display:none;min-height:100vh;background:radial-gradient(ellipse at 50% 0%,#1a0c02 0%,#05050f 60%);flex-direction:column;">
+
+  <!-- SYNC BAR - hub level, always visible after login -->
+  <div id="hub-sync-bar" style="background:rgba(10,10,24,.92);border-bottom:1px solid #1b1b2e;padding:7px 20px;display:flex;align-items:center;justify-content:space-between;font-size:.74rem;gap:8px;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="28" height="28" style="flex-shrink:0;"><rect x="4" y="4" width="92" height="92" rx="20" fill="#0d0d1f" stroke="rgba(242,200,75,0.5)" stroke-width="2"/><text x="50" y="70" font-family="Georgia,serif" font-size="58" font-weight="700" text-anchor="middle" fill="#ffffff" letter-spacing="-2">R</text><text x="50" y="87" font-family="Arial,sans-serif" font-size="9" font-weight="700" text-anchor="middle" fill="#f2c84b" letter-spacing="4">RIAZ</text></svg>
+      <div style="display:flex;align-items:center;color:#9898b0;">
+        <span id="hub-sync-dot" style="width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block;margin-right:6px;background:#555;"></span>
+        <span id="hub-sync-text">Cloud sync সেট আপ হয়নি</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;">
+      <button id="hub-sync-btn" onclick="hubManualSync()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:5px 12px;color:#9898b0;font-size:.72rem;cursor:pointer;font-family:inherit;transition:all .2s;"><span id="hub-sync-icon">↻</span> <span id="hub-sync-btxt">Sync</span></button>
+      <button onclick="openGuide()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:5px 12px;color:#9898b0;font-size:.72rem;cursor:pointer;font-family:inherit;">☁️ Setup</button>
+    </div>
+  </div>
+
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:28px 20px;">
   <div style="text-align:center;margin-bottom:40px;">
     <div style="font-size:1.8rem;margin-bottom:8px;">بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ</div>
     <h1 style="font-family:'Playfair Display',serif;font-size:clamp(1.5rem,4vw,2.4rem);font-weight:900;background:linear-gradient(140deg,#fff 30%,#e85d2a 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px;">Riaz-এর Dashboard</h1>
@@ -734,6 +746,7 @@ CREATE POLICY "open" ON d90_state FOR ALL USING (true) WITH CHECK (true);</div>
 
   </div>
   <button onclick="doLogout()" style="margin-top:36px;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.22);color:#f87171;border-radius:20px;padding:8px 20px;font-size:.75rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;" onmouseover="this.style.background='rgba(248,113,113,.18)'" onmouseout="this.style.background='rgba(248,113,113,.08)'">⎋ লগআউট</button>
+  </div><!-- end inner flex -->
 </div>
 
 <!-- STUDY TRACKER SECTION -->
@@ -2191,8 +2204,7 @@ async function saveSupaConfig(){
     if(error && error.code!=='PGRST116') throw error;
     localStorage.setItem(SUPA_CFG_KEY,JSON.stringify({url,key}));
     msg.style.color='#4caf7d';msg.textContent='✓ সংযোগ সফল! Data sync হচ্ছে...';
-    document.getElementById('sync-bar').style.display='flex';
-    await cloudSave();
+      await cloudSave();
     setTimeout(()=>{
       document.getElementById('guide-overlay').classList.remove('open');
       showToast('☁️','Cloud Sync চালু!','তোমার data এখন সব device-এ sync হবে।');
@@ -2232,12 +2244,173 @@ async function initSupaIfConfigured(){
   if(cfg&&cfg.url&&cfg.key){
     const ok=initSupabase(cfg.url,cfg.key);
     if(ok){
-      document.getElementById('sync-bar').style.display='flex';
-      setSyncStatus('yellow','Connecting...');
+          setSyncStatus('yellow','Connecting...');
       await cloudLoad();
       renderStats();renderPhaseBars();renderCards();
     }
   }
+}
+
+// ==================== HUB-LEVEL SYNC (all 3 sections) ====================
+
+// Hub sync status updater
+function setHubSyncStatus(status, text){
+  const dot = document.getElementById('hub-sync-dot');
+  const txt = document.getElementById('hub-sync-text');
+  const btn = document.getElementById('hub-sync-btn');
+  const icon = document.getElementById('hub-sync-icon');
+  const btxt = document.getElementById('hub-sync-btxt');
+  if(!dot||!txt) return;
+  const colors = {green:'#4caf7d', yellow:'#f0a500', red:'#f87171', grey:'#555'};
+  dot.style.background = colors[status] || '#555';
+  dot.style.boxShadow = status !== 'grey' ? `0 0 6px ${colors[status]}` : 'none';
+  txt.textContent = text;
+  if(status==='yellow'){
+    if(icon) icon.innerHTML = '<span style="display:inline-block;animation:spin .7s linear infinite">↻</span>';
+    if(btxt) btxt.textContent = ' Syncing...';
+    if(btn){ btn.style.opacity='.6'; btn.style.pointerEvents='none'; }
+  } else if(status==='green'){
+    if(icon) icon.textContent = '✓';
+    if(btxt) btxt.textContent = ' Synced';
+    if(btn){ btn.style.opacity='1'; btn.style.pointerEvents='auto'; btn.style.color='#4caf7d'; btn.style.borderColor='rgba(76,175,125,.4)'; }
+    setTimeout(()=>{
+      if(icon) icon.textContent = '↻';
+      if(btxt) btxt.textContent = ' Sync';
+      if(btn){ btn.style.color=''; btn.style.borderColor=''; }
+    }, 3000);
+  } else if(status==='red'){
+    if(icon) icon.textContent = '✗';
+    if(btxt) btxt.textContent = ' Error';
+    if(btn){ btn.style.opacity='1'; btn.style.pointerEvents='auto'; btn.style.color='#f87171'; }
+    setTimeout(()=>{
+      if(icon) icon.textContent = '↻';
+      if(btxt) btxt.textContent = ' Sync';
+      if(btn){ btn.style.color=''; }
+    }, 4000);
+  } else {
+    if(icon) icon.textContent = '↻';
+    if(btxt) btxt.textContent = ' Sync';
+    if(btn){ btn.style.opacity='1'; btn.style.pointerEvents='auto'; btn.style.color=''; }
+  }
+}
+
+// Save ALL data (challenge + journal + study) to Supabase
+async function cloudSaveAll(){
+  if(!supaClient){ setHubSyncStatus('grey','Cloud sync সেট আপ হয়নি'); return false; }
+  setHubSyncStatus('yellow','Saving...');
+  try{
+    const allData = {
+      challenge: state,
+      journal: loadJournalData(),
+      journal_folders: loadJournalFolders(),
+      uploaded_files: loadUploadedFiles(),
+      study: loadStudyData(),
+      saved_at: new Date().toISOString()
+    };
+    const {error} = await supaClient.from(SUPA_TABLE).upsert({
+      id: SUPA_ROW_ID,
+      data: allData,
+      updated_at: new Date().toISOString()
+    });
+    if(error) throw error;
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('bn-BD',{hour:'2-digit',minute:'2-digit'});
+    const dateStr = now.toLocaleDateString('bn-BD',{day:'numeric',month:'short'});
+    setHubSyncStatus('green', `✓ সব সেভ — ${dateStr}, ${timeStr}`);
+    // Also update old sync-bar if visible
+    setSyncStatus('green', `✓ Synced — ${dateStr}, ${timeStr}`);
+    return true;
+  }catch(e){
+    setHubSyncStatus('red', '✗ Error: '+e.message);
+    return false;
+  }
+}
+
+// Load ALL data from Supabase
+async function cloudLoadAll(){
+  if(!supaClient){ setHubSyncStatus('grey','Cloud sync সেট আপ হয়নি'); return false; }
+  setHubSyncStatus('yellow','Loading...');
+  try{
+    const {data, error} = await supaClient
+      .from(SUPA_TABLE).select('data,updated_at').eq('id', SUPA_ROW_ID).maybeSingle();
+    if(error) throw error;
+    if(data && data.data){
+      const d = data.data;
+      // Challenge data
+      if(d.challenge){ state = d.challenge; save(); }
+      // Journal data
+      if(d.journal) saveJournalData(d.journal);
+      if(d.journal_folders) saveJournalFolders(d.journal_folders);
+      if(d.uploaded_files) saveUploadedFiles(d.uploaded_files);
+      // Study data
+      if(d.study) localStorage.setItem('study3rd', JSON.stringify(d.study));
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('bn-BD',{hour:'2-digit',minute:'2-digit'});
+      setHubSyncStatus('green', `✓ লোড হয়েছে — ${timeStr}`);
+      setSyncStatus('green','✓ Loaded from cloud');
+      return true;
+    } else {
+      // No cloud data yet — push all local data
+      await cloudSaveAll();
+      return true;
+    }
+  }catch(e){
+    setHubSyncStatus('red','✗ Load error: '+e.message);
+    return false;
+  }
+}
+
+// Manual sync button on hub
+async function hubManualSync(){
+  if(!supaClient){ openGuide(); return; }
+  const ok = await cloudLoadAll();
+  if(ok){
+    // Refresh whichever section is currently visible
+    if(document.getElementById('main-content').style.display==='block'){
+      renderStats(); renderPhaseBars(); renderCards();
+    }
+    if(document.getElementById('journal-section').style.display==='block'){
+      renderJournalList(); renderJournalFolders(); renderUploadedFiles();
+    }
+    if(document.getElementById('study-section').style.display==='block'){
+      renderStudyTabs(); renderStudyStats();
+    }
+  }
+}
+
+// Override old initSupaIfConfigured to use hub-level
+async function initSupaIfConfigured(){
+  const cfg = loadSupaConfig();
+  if(cfg && cfg.url && cfg.key){
+    const ok = initSupabase(cfg.url, cfg.key);
+    if(ok){
+      setHubSyncStatus('yellow','Connecting...');
+      const loaded = await cloudLoadAll();
+      if(loaded){
+        renderStats(); renderPhaseBars(); renderCards();
+      }
+    }
+  }
+}
+
+// Override save() so every challenge save also syncs all data
+const _baseSave = save;
+save = function(){
+  localStorage.setItem('d90v3', JSON.stringify(state));
+  if(supaClient) cloudSaveAll();
+};
+
+// Override journal save to also cloud sync
+const _baseJournalSave = typeof saveJournalData === 'function' ? saveJournalData : null;
+function saveJournalDataAndSync(entries){
+  localStorage.setItem(JNL_KEY, JSON.stringify(entries));
+  if(supaClient) cloudSaveAll();
+}
+
+// Override study save to also cloud sync
+function saveStudyDataAndSync(d){
+  localStorage.setItem('study3rd', JSON.stringify(d));
+  if(supaClient) cloudSaveAll();
 }
 
 // ==================== LOGIN SYSTEM ====================
@@ -2255,6 +2428,7 @@ function doLogin(){
   if(u===LOGIN_USER && p===LOGIN_PASS){
     err.textContent='';
     localStorage.setItem(SESSION_KEY,'active');
+    setTimeout(initSupaIfConfigured, 800);
     const screen=document.getElementById('login-screen');
     screen.classList.add('login-screen-exit');
     setTimeout(async()=>{
@@ -2287,6 +2461,7 @@ function loadJournalData(){
 }
 function saveJournalData(entries){
   localStorage.setItem(JNL_KEY, JSON.stringify(entries));
+  if(typeof supaClient !== 'undefined' && supaClient) cloudSaveAll();
 }
 function getTodayISOJ(){
   return new Date().toISOString().split('T')[0];
@@ -2311,7 +2486,7 @@ function openJournal(){
   document.getElementById('hub-screen').style.display='none';
   document.getElementById('main-content').style.display='none';
   document.getElementById('study-section').style.display='none';
-  document.getElementById('sync-bar').style.display='none';
+  history.pushState({page:'journal'},'','#journal');
   document.getElementById('journal-section').style.display='block';
   document.getElementById('journal-welcome').style.display='block';
   document.getElementById('journal-editor').style.display='none';
@@ -2326,8 +2501,9 @@ function openJournal(){
 function backToHubFromJournal(){
   document.getElementById('journal-section').style.display='none';
   document.getElementById('hub-screen').style.display='flex';
+  history.pushState({page:'hub'},'','#hub');
   document.getElementById('main-content').style.display='none';
-  document.getElementById('sync-bar').style.display='none';
+  history.pushState({page:'hub'},'','#hub');
 }
 
 function renderJournalList(){
@@ -2651,6 +2827,7 @@ function loadStudyData(){
 }
 function saveStudyData(d){
   localStorage.setItem('study3rd',JSON.stringify(d));
+  if(typeof supaClient !== 'undefined' && supaClient) cloudSaveAll();
 }
 function getTodayISO(){
   return new Date().toISOString().split('T')[0];
@@ -2661,12 +2838,33 @@ function fmtDate(s){
   return d+'/'+m+'/'+y;
 }
 
+// Browser back button
+window.addEventListener('popstate', function(e){
+  const page = e.state ? e.state.page : 'hub';
+  ['hub-screen','main-content','journal-section','study-section'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.style.display='none';
+  });
+  if(page==='challenge'){
+    document.getElementById('main-content').style.display='block';
+  } else if(page==='journal'){
+    document.getElementById('journal-section').style.display='block';
+    document.getElementById('journal-welcome').style.display='block';
+    document.getElementById('journal-editor').style.display='none';
+    document.getElementById('drive-viewer').style.display='none';
+  } else if(page==='study'){
+    document.getElementById('study-section').style.display='block';
+    renderStudyTabs(); renderStudyStats();
+  } else {
+    document.getElementById('hub-screen').style.display='flex';
+  }
+});
+
 function openChallenge(){
   document.getElementById('hub-screen').style.display='none';
   document.getElementById('journal-section').style.display='none';
   document.getElementById('study-section').style.display='none';
   document.getElementById('main-content').style.display='block';
-  document.getElementById('sync-bar').style.display='flex';
+  history.pushState({page:'challenge'},'','#challenge');
   init();
   initSupaIfConfigured();
 }
@@ -2675,8 +2873,8 @@ function openStudy(){
   document.getElementById('hub-screen').style.display='none';
   document.getElementById('main-content').style.display='none';
   document.getElementById('journal-section').style.display='none';
-  document.getElementById('sync-bar').style.display='none';
   document.getElementById('study-section').style.display='block';
+  history.pushState({page:'study'},'','#study');
   renderStudyTabs();
   renderStudyStats();
 }
@@ -2684,14 +2882,13 @@ function openStudy(){
 function backToHub(){
   document.getElementById('study-section').style.display='none';
   document.getElementById('main-content').style.display='none';
-  document.getElementById('sync-bar').style.display='none';
   document.getElementById('hub-screen').style.display='flex';
+  history.pushState({page:'hub'},'','#hub');
 }
 
 // Add back to hub from challenge
 function goBackToHub(){
   document.getElementById('main-content').style.display='none';
-  document.getElementById('sync-bar').style.display='none';
   document.getElementById('hub-screen').style.display='flex';
 }
 
@@ -2858,17 +3055,15 @@ function toggleAllNotesView(){
   document.getElementById('study-all-notes-content').innerHTML = html;
 }
 
-function initScreen(){
+window.addEventListener('load',()=>{
   if(checkSession()){
     document.getElementById('login-screen').style.display='none';
     document.getElementById('hub-screen').style.display='flex';
   } else {
-    document.getElementById('login-screen').style.display='flex';
-    setTimeout(()=>{ var u=document.getElementById('login-user'); if(u) u.focus(); },300);
+    // Focus username field
+    setTimeout(()=>document.getElementById('login-user').focus(),300);
   }
-}
-document.addEventListener('DOMContentLoaded', initScreen);
-window.addEventListener('load', initScreen);
+});
 </script>
 
 </div><!-- end main-content -->
