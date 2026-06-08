@@ -2648,7 +2648,7 @@ function journalUploadFile(input){
     reader.readAsText(file, 'UTF-8');
 
   } else if(name.endsWith('.docx') || name.endsWith('.doc')){
-    // Read .docx as zip, extract word/document.xml (UTF-8)
+    // Read .docx as zip, extract word/document.xml with Windows-1252 encoding
     const reader = new FileReader();
     reader.onload = async function(e){
       try {
@@ -2661,12 +2661,8 @@ function journalUploadFile(input){
         const xmlFile = zip.file('word/document.xml');
         if(!xmlFile){ status.textContent='✗ document.xml পাওয়া যায়নি'; return; }
 
-        // Read XML as binary (Uint8Array) to preserve original byte values
-        const xmlBytes = await xmlFile.async('uint8array');
-
-        // Decode as UTF-8 for Unicode Bengali support
-        const decoder = new TextDecoder('utf-8');
-        const xmlText = decoder.decode(xmlBytes);
+        // Read XML as string (UTF-8) — supports Unicode Bengali directly
+        const xmlText = await xmlFile.async('string');
 
         // Parse XML and extract text runs preserving paragraph structure
         const parser = new DOMParser();
@@ -2682,8 +2678,9 @@ function journalUploadFile(input){
           if(paraText.trim()){
             // Check if bold
             const isBold = para.querySelector('b') !== null;
-            const tag = isBold ? 'strong' : 'span';
-            const converted = bijoyToUnicode(paraText);
+            // If text already has Unicode Bengali, use as-is; otherwise try bijoy convert
+            const hasUnicodeBangla = /[\u0980-\u09FF]/.test(paraText);
+            const converted = hasUnicodeBangla ? paraText : bijoyToUnicode(paraText);
             html += '<p>' + converted + '</p>\n';
           } else {
             html += '<p>&nbsp;</p>\n'; // empty line
