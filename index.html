@@ -2661,29 +2661,29 @@ function journalUploadFile(input){
         const xmlFile = zip.file('word/document.xml');
         if(!xmlFile){ status.textContent='✗ document.xml পাওয়া যায়নি'; return; }
 
-        // Read XML as string (UTF-8) — supports Unicode Bengali directly
+        // Read XML as UTF-8 string (JSZip handles encoding automatically)
         const xmlText = await xmlFile.async('string');
 
         // Parse XML and extract text runs preserving paragraph structure
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
 
-        // Extract text: each <w:p> = paragraph, each <w:t> = text run
-        const paras = xmlDoc.querySelectorAll('p');
+        // w:p = paragraph, w:t = text run (namespace-aware)
+        const NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+        const paras = xmlDoc.getElementsByTagNameNS(NS, 'p');
         let html = '';
-        paras.forEach(para => {
-          const runs = para.querySelectorAll('t');
+        Array.from(paras).forEach(para => {
+          const runs = para.getElementsByTagNameNS(NS, 't');
           let paraText = '';
-          runs.forEach(run => { paraText += run.textContent; });
+          Array.from(runs).forEach(run => { paraText += run.textContent; });
           if(paraText.trim()){
-            // Check if bold
-            const isBold = para.querySelector('b') !== null;
-            // If text already has Unicode Bengali, use as-is; otherwise try bijoy convert
+            const isBold = para.getElementsByTagNameNS(NS, 'b').length > 0;
             const hasUnicodeBangla = /[\u0980-\u09FF]/.test(paraText);
             const converted = hasUnicodeBangla ? paraText : bijoyToUnicode(paraText);
-            html += '<p>' + converted + '</p>\n';
+            const tag = isBold ? 'strong' : 'p';
+            html += '<' + tag + '>' + converted + '</' + tag + '>\n';
           } else {
-            html += '<p>&nbsp;</p>\n'; // empty line
+            html += '<p>&nbsp;</p>\n';
           }
         });
 
