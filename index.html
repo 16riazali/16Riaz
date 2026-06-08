@@ -2648,7 +2648,7 @@ function journalUploadFile(input){
     reader.readAsText(file, 'UTF-8');
 
   } else if(name.endsWith('.docx') || name.endsWith('.doc')){
-    // Read .docx as zip, extract word/document.xml with Windows-1252 encoding
+    // Read .docx as zip, extract word/document.xml (UTF-8)
     const reader = new FileReader();
     reader.onload = async function(e){
       try {
@@ -2664,8 +2664,8 @@ function journalUploadFile(input){
         // Read XML as binary (Uint8Array) to preserve original byte values
         const xmlBytes = await xmlFile.async('uint8array');
 
-        // Decode as Windows-1252 to preserve SutonnyMJ codepoints
-        const decoder = new TextDecoder('windows-1252');
+        // Decode as UTF-8 for Unicode Bengali support
+        const decoder = new TextDecoder('utf-8');
         const xmlText = decoder.decode(xmlBytes);
 
         // Parse XML and extract text runs preserving paragraph structure
