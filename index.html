@@ -2423,20 +2423,20 @@ function bijoyToUnicode(text){
     'Z':'ত','_':'থ','\u0060':'দ','a':'ধ','b':'ন',
     'c':'প','d':'ফ','e':'ব','f':'ভ','g':'ম',
     'h':'য','i':'র','j':'ল','k':'শ','l':'ষ',
-    'm':'স','n':'হ','o':'ড়','p':'ঢ়','q':'য়','r':'ৎ','t':'ঃ',
+    'm':'স','n':'হ','o':'ড়','p':'ঢ়','q':'য়','r':'ৎ',
     'v':'া','y':'ু','z':'ু','~':'ূ',
     '\u00af':'স্','\u201e':'ৃ','\u00a8':'্য','\u00fc':'হৃ',
     '\u00d6':'্র','\u00a9':'র্','\u00a4':'ম্প','\u00fa':'ূ',
     '\u00ef':'শ','\u00f3':'ং','\u00a7':'ম','\u0161':'ন্ত','\u00cd':'র',
     '\u00e3':'ব্দ',
-    'ª':'্র','®':'ষ্','¸':'গু','½':'ঙ্গ','æ':'ু','œ':'্ন','‹':'ক',
+    'ª':'্র','®':'ষ্','¸':'গু','½':'ঙ্গ','æ':'ু','œ':'্ন','‹':'ক','t':'ঃ','^':'্ব',
     '0':'০','1':'১','2':'২','3':'৩','4':'৪',
     '5':'৫','6':'৬','7':'৭','8':'৮','9':'৯',
     ' ':' ','\n':'\n','\t':'\t','\r':'\r',
     ',':',','.':'।','?':'?','-':'-','!':'!',
     '(':' (',')':")  ",';':';'
   };
-  var CONS='KLMNOPQRSTUVWXYZabcdefghijklmnopqrÍ_`\u00e3\u00ef\u00fc';
+  var CONS='KLMNOPQRSTUVWXYZabcdefghijklmnopqrÍ_`\u00e3\u00ef\u00fc\u00af\u00a8\u00ae\u0161\u2039';
   var result='', i=0, n=text.length;
   while(i<n){
     var ch=text[i];
@@ -2468,6 +2468,7 @@ function bijoyToUnicode(text){
     if(ch==='x'&&i+1<n&&CONS.indexOf(text[i+1])>=0&&m[text[i+1]]!==undefined){
       result+=m[text[i+1]]+'ী';i+=2;continue;
     }
+    if(ch==='x'){result+='ী';i+=1;continue;}
     // consonant + Ö (ra-phola)
     if(CONS.indexOf(ch)>=0&&m[ch]!==undefined&&i+1<n&&text[i+1]==='\u00d6'){
       result+=m[ch]+'্র';i+=2;continue;
@@ -2662,14 +2663,14 @@ function journalUploadFile(input){
         const xmlFile = zip.file('word/document.xml');
         if(!xmlFile){ status.textContent='✗ document.xml পাওয়া যায়নি'; return; }
 
-        // Read XML as UTF-8 string (JSZip handles encoding automatically)
+        // Read XML as UTF-8 string
         const xmlText = await xmlFile.async('string');
 
         // Parse XML and extract text runs preserving paragraph structure
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
 
-        // w:p = paragraph, w:t = text run (namespace-aware)
+        // Extract text using namespace-aware selectors
         const NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
         const paras = xmlDoc.getElementsByTagNameNS(NS, 'p');
         let html = '';
@@ -2688,7 +2689,7 @@ function journalUploadFile(input){
           }
         });
 
-        if(!html.trim()) html = '<p>(ফাইলে কোনো টেক্সট পাওয়া যায়নি)</p>';
+        if(!html.trim()) html = '';
         saveFile(html, true);
 
       } catch(err) {
@@ -2740,7 +2741,7 @@ function journalOpenUploadedFile(idx){
     contentEl.querySelectorAll('td,th').forEach(td=>{ td.style.border='1px solid #252540'; td.style.padding='6px 10px'; });
   } else {
     contentEl.innerHTML = '';
-    contentEl.textContent = f.content || '(বিষয়বস্তু পড়া যাচ্ছে না)';
+    contentEl.textContent = f.content || '';
   }
   // Show download button
   const dlBtn = document.getElementById('drive-download-btn');
